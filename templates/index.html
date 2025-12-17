@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Auth System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', sans-serif; }
+        .screen { display: none; }
+        .screen.active { display: flex; }
+        .otp-input:focus { border-color: #2563eb; ring: 2px; }
+    </style>
+</head>
+<body class="h-screen w-full flex justify-center items-center">
+
+    <div class="w-full max-w-md h-full sm:h-[90vh] bg-white sm:rounded-2xl shadow-2xl overflow-hidden relative flex flex-col">
+        
+        <div class="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md z-10">
+            <div class="font-bold text-lg"><i class="fas fa-shield-alt mr-2"></i>SecureAuth</div>
+            <div id="status-indicator" class="text-xs bg-gray-700 px-2 py-1 rounded hidden">Disconnected</div>
+        </div>
+
+        <div id="toast" class="absolute top-16 left-0 w-full p-4 hidden transition-all duration-300 z-50">
+            <div id="toast-msg" class="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg text-center font-medium text-sm"></div>
+        </div>
+
+        <div id="screen-login" class="screen active flex-col p-6 h-full justify-center">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Welcome Back</h2>
+            <p class="text-gray-500 mb-8 text-sm">Enter your credentials to access services.</p>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase">Email</label>
+                    <input type="email" id="login-email" class="w-full border p-3 rounded-lg focus:outline-none focus:border-blue-600 transition" placeholder="user@gmail.com" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase">Password</label>
+                    <input type="password" id="login-pass" class="w-full border p-3 rounded-lg focus:outline-none focus:border-blue-600 transition" placeholder="••••••••" required>
+                </div>
+                <div class="text-right">
+                    <a href="#" class="text-blue-600 text-sm font-semibold">Forgot Password?</a>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-blue-700 transition">LOG IN</button>
+            </form>
+
+            <div class="mt-6 text-center text-sm">
+                Don't have an account? <a href="#" onclick="nav('screen-register')" class="text-blue-600 font-bold">Register</a>
+            </div>
+            <div class="mt-8 p-3 bg-yellow-50 text-xs text-yellow-800 rounded border border-yellow-200">
+                <p><b>Demo Admin:</b> admin@sys.com / 1234</p>
+                <p><b>Demo User:</b> user@gmail.com / 1234</p>
+            </div>
+        </div>
+
+        <div id="screen-register" class="screen flex-col p-6 h-full justify-center">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Create Account</h2>
+            <p class="text-gray-500 mb-8 text-sm">Join us with Zero Trust security.</p>
+            
+            <form onsubmit="handleRegister(event)" class="space-y-4">
+                <input type="email" id="reg-email" class="w-full border p-3 rounded-lg" placeholder="user@gmail.com" required>
+                <input type="password" id="reg-pass" class="w-full border p-3 rounded-lg" placeholder="Create Password" required>
+                <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg">REGISTER</button>
+            </form>
+
+            <div class="mt-6 text-center text-sm">
+                Already registered? <a href="#" onclick="nav('screen-login')" class="text-blue-600 font-bold">Log In</a>
+            </div>
+        </div>
+
+        <div id="screen-otp" class="screen flex-col p-6 h-full justify-center text-center">
+            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                <i class="fas fa-envelope-open-text text-2xl"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-800">Verify It's You</h2>
+            <p class="text-gray-500 text-sm mt-1 mb-6">Enter code sent to <span id="otp-email-display" class="font-bold text-slate-800"></span></p>
+
+            <div class="space-y-4">
+                <input type="text" id="otp-input" maxlength="6" class="w-full text-center text-3xl font-bold tracking-[10px] border-2 border-gray-300 rounded-lg py-3 focus:outline-none focus:border-blue-600" placeholder="000000">
+                
+                <p class="text-sm text-gray-500">Expires in <span id="otp-timer" class="text-red-500 font-bold">05:00</span></p>
+                
+                <button onclick="handleVerifyOTP()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg">VERIFY CODE</button>
+            </div>
+            
+            <button class="mt-4 text-gray-400 text-sm" disabled>Resend Code (Wait 60s)</button>
+        </div>
+
+        <div id="screen-admin" class="screen flex-col h-full bg-gray-50">
+            <div class="p-4 bg-white shadow-sm mb-2 flex justify-between items-center">
+                <h3 class="font-bold text-slate-700">Admin Panel</h3>
+                <button onclick="logout()" class="text-red-500 text-sm font-bold border border-red-500 px-3 py-1 rounded">LOGOUT</button>
+            </div>
+            
+            <div class="p-4 overflow-y-auto flex-1">
+                <div id="user-list" class="space-y-3">
+                    </div>
+            </div>
+        </div>
+
+        <div id="screen-jail" class="screen flex-col h-full bg-red-600 justify-center items-center text-white p-8 text-center z-50">
+            <div class="bg-white p-4 rounded-full mb-6 shadow-xl">
+                <i class="fas fa-lock text-4xl text-red-600"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-2">ACCESS DENIED</h1>
+            <p class="opacity-90 mb-8">Your account has been flagged and blocked by the administrator.</p>
+            <div class="bg-red-800 px-4 py-2 rounded text-sm font-mono">Error: 403_FORBIDDEN_USER</div>
+            <button onclick="logout()" class="mt-12 text-white border border-white px-6 py-2 rounded hover:bg-white hover:text-red-600 transition">Back to Home</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- MOCK DATABASE ---
+        const users = [
+            { email: "admin@sys.com", pass: "1234", role: "ADMIN", status: "ACTIVE", verified: true },
+            { email: "user@gmail.com", pass: "1234", role: "USER", status: "ACTIVE", verified: true },
+            { email: "hacker@gmail.com", pass: "1234", role: "USER", status: "BLOCKED", verified: true },
+            { email: "new@gmail.com", pass: "1234", role: "USER", status: "UNVERIFIED", verified: false }
+        ];
+
+        let currentUser = null;
+        let otpAttempts = 0;
+        const VALID_OTP = "123456"; // Simulating Hash Match
+
+        // --- NAVIGATION ---
+        function nav(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function showToast(msg, type = 'error') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = msg;
+            toastMsg.className = type === 'success' 
+                ? "bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg text-center" 
+                : "bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg text-center";
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        function logout() {
+            currentUser = null;
+            nav('screen-login');
+            showToast("Logged Out", "success");
+        }
+
+        // --- BACKEND LOGIC SIMULATION ---
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+
+            // 1. Find User
+            const user = users.find(u => u.email === email && u.pass === pass);
+
+            if (!user) {
+                showToast("Invalid Credentials");
+                return;
+            }
+
+            // 2. CHECK: BLOCKED? (Priority 1)
+            if (user.status === "BLOCKED") {
+                nav('screen-jail');
+                return;
+            }
+
+            // 3. CHECK: VERIFIED? (Priority 2)
+            if (!user.verified || user.status === "UNVERIFIED") {
+                currentUser = user; // Temp Session
+                document.getElementById('otp-email-display').innerText = email;
+                showToast("Verification Required. OTP Sent.", "warning");
+                nav('screen-otp'); // FORCE OTP
+                return;
+            }
+
+            // 4. CHECK: ADMIN?
+            if (user.role === "ADMIN") {
+                currentUser = user;
+                renderAdminPanel();
+                nav('screen-admin');
+                return;
+            }
+
+            // 5. SUCCESS (Normal User) - In real app, here comes the Login OTP
+            // For UI demo, showing success
+            showToast("Login Successful!", "success");
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const email = document.getElementById('reg-email').value;
+            
+            if (users.find(u => u.email === email)) {
+                showToast("User already exists");
+                return;
+            }
+
+            // Create UNVERIFIED User
+            const newUser = { email: email, pass: "1234", role: "USER", status: "UNVERIFIED", verified: false };
+            users.push(newUser);
+            currentUser = newUser;
+
+            // Send OTP Logic
+            document.getElementById('otp-email-display').innerText = email;
+            showToast("Account Created. OTP Sent to Email.", "success");
+            nav('screen-otp'); // Direct to OTP, NO AUTO LOGIN
+        }
+
+        function handleVerifyOTP() {
+            const input = document.getElementById('otp-input').value;
+
+            if (input === VALID_OTP) {
+                // Success
+                currentUser.verified = true;
+                if (currentUser.status !== "BLOCKED") currentUser.status = "ACTIVE";
+                showToast("Verified! Please Login.", "success");
+                nav('screen-login'); // Rule: Verify -> Login Screen
+            } else {
+                // Failure
+                otpAttempts++;
+                if (otpAttempts >= 3) {
+                    showToast("Too many attempts. OTP Locked.", "error");
+                    document.getElementById('otp-input').disabled = true;
+                } else {
+                    showToast(`Invalid Code. ${3 - otpAttempts} attempts left.`);
+                }
+            }
+        }
+
+        // --- ADMIN PANEL LOGIC ---
+
+        function renderAdminPanel() {
+            const list = document.getElementById('user-list');
+            list.innerHTML = '';
+
+            users.forEach(u => {
+                if(u.role === 'ADMIN') return; // Hide self
+
+                let statusColor = u.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 
+                                  u.status === 'BLOCKED' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800';
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-lg shadow border-l-4 " + (u.status === 'BLOCKED' ? "border-red-500" : "border-green-500");
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-slate-700">${u.email}</p>
+                            <span class="text-xs px-2 py-1 rounded font-bold ${statusColor}">${u.status}</span>
+                            <div class="text-xs text-gray-400 mt-1">Verified: ${u.verified}</div>
+                        </div>
+                        <div>
+                            ${u.status === 'BLOCKED' 
+                                ? `<button onclick="adminAction('${u.email}', 'UNBLOCK')" class="bg-green-500 text-white text-xs px-3 py-2 rounded font-bold">UNBLOCK</button>`
+                                : `<button onclick="adminAction('${u.email}', 'BLOCK')" class="bg-red-500 text-white text-xs px-3 py-2 rounded font-bold">BLOCK</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function adminAction(targetEmail, action) {
+            const target = users.find(u => u.email === targetEmail);
+            
+            if (action === 'BLOCK') {
+                const reason = prompt("Reason for blocking (Mandatory for Logs):");
+                if (!reason) { showToast("Reason required!"); return; }
+                target.status = "BLOCKED";
+                showToast(`Blocked ${targetEmail}`, "success");
+            } 
+            else if (action === 'UNBLOCK') {
+                if (!target.verified) { showToast("Cannot unblock UNVERIFIED user."); return; }
+                target.status = "ACTIVE";
+                showToast(`Unblocked ${targetEmail}`, "success");
+            }
+            renderAdminPanel();
+        }
+
+    </script>
+</body>
+</html>
